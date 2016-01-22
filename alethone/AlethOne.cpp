@@ -27,6 +27,7 @@
 #include <QToolButton>
 #include <QButtonGroup>
 #include <QDateTime>
+#include <QDesktopServices>
 #include <libethcore/Common.h>
 #include <libethcore/ICAP.h>
 #include <libethereum/Client.h>
@@ -35,6 +36,7 @@
 #include <libaleth/SendDialog.h>
 #include "alethzero/BuildInfo.h"
 #include "ui_AlethOne.h"
+#include <string>
 using namespace std;
 using namespace dev;
 using namespace p2p;
@@ -49,11 +51,10 @@ AlethOne::AlethOne():
 
 	setWindowFlags(Qt::Window);
 	m_ui->setupUi(this);
-	m_aleth.init(Aleth::Nothing, "AlethOne", "anon");
+	m_aleth.init(Aleth::Nothing, "winze.io", "anon");
 
-	//(c_network == eth::Network::Olympic ? "Olympic" : c_network == eth::Network::Morden ? "Morden" : "Frontier") +
-	m_ui->version->setText(QString("AlethOne v") + QString::fromStdString(niceVersion(dev::Version)));
-	m_ui->author->setPlaceholderText(QString::fromStdString(ICAP(m_aleth.keyManager().accounts().front()).encoded()));
+	m_ui->version->setText(QString("winze.io v") + "0.0.2");
+	//m_ui->author->setPlaceholderText(QString::fromStdString(ICAP(m_aleth.keyManager().accounts().front()).encoded()));
 	m_ui->sync->setAleth(&m_aleth);
 
 	{
@@ -63,13 +64,16 @@ AlethOne::AlethOne():
 	}
 
 	readSettings();
+	QSettings s("ethereum", "alethone");
+	QString url = "http://pool.winze.io/?miner=7@0x" + QString::fromStdString(m_aleth.keyManager().accounts().front().hex());
+	s.setValue("url", url);
+	// TODO Set MH/s after a test
 
 	refresh();
 }
 
 AlethOne::~AlethOne()
 {
-	writeSettings();
 	delete m_ui;
 }
 
@@ -112,24 +116,24 @@ void AlethOne::refresh()
 		else if (gp.first != EthashAux::NotGenerating)
 		{
 			m_ui->hashrate->setText(QString("%1%").arg(gp.second));
-			m_ui->underHashrate->setText(QString(tr("Preparing")).arg(gp.first));
+			m_ui->underHashrate->setText(QString(tr("Preparing...")).arg(gp.first));
 		}
 		else if (s)
 			m_ui->stack->setCurrentIndex(0);
 		else if (m)
 		{
 			m_ui->hashrate->setText("...");
-			m_ui->underHashrate->setText(tr("Preparing"));
+			m_ui->underHashrate->setText(tr("Preparing..."));
 		}
 		else
 		{
 			m_ui->hashrate->setText("...");
-			m_ui->underHashrate->setText(tr("Waiting"));
+			m_ui->underHashrate->setText(tr("Waiting..."));
 		}
 	}
 	else
 	{
-		m_ui->mining->setText(tr("Start Mining"));
+		m_ui->mining->setText(tr("Start winze!"));
 		if (s)
 			m_ui->stack->setCurrentIndex(0);
 		else
@@ -142,48 +146,20 @@ void AlethOne::refresh()
 
 void AlethOne::readSettings()
 {
-	QSettings s("ethereum", "alethone");
+	/*QSettings s("ethereum", "alethone");
 	if (s.value("mode", "solo").toString() == "solo")
 		m_ui->local->setChecked(true);
 	else
 		m_ui->pool->setChecked(true);
 	m_ui->url->setText(s.value("url", "http://127.0.0.1:8545").toString());
-	m_ui->author->setText(s.value("author", "").toString());
+	m_ui->author->setText(s.value("author", "").toString());*/
 }
 
-void AlethOne::writeSettings()
+void AlethOne::on_feedback_clicked()
 {
-	QSettings s("ethereum", "alethone");
-	s.setValue("mode", m_ui->local->isChecked() ? "solo" : "pool");
-	s.setValue("url", m_ui->url->text());
-	s.setValue("author", m_ui->author->text());
-}
-
-void AlethOne::on_copy_clicked()
-{
-	static QTime t = QTime::currentTime();
-	if (m_aleth)
-	{
-		if (t.elapsed() > 500)
-			qApp->clipboard()->setText(QString::fromStdString(ICAP(m_aleth.author()).encoded()));
-		else
-			qApp->clipboard()->setText(QString::fromStdString(m_aleth.author().hex()));
-		t.restart();
-	}
-}
-
-void AlethOne::on_beneficiary_textEdited()
-{
-	QString addrText = m_ui->author->text().isEmpty() ? m_ui->author->placeholderText() : m_ui->author->text();
-	pair<Address, bytes> a = m_aleth.readAddress(addrText.toStdString());
-	if (!a.second.empty() || !a.first)
-		m_ui->author->setStyleSheet("background: #fcc");
-	else
-	{
-		m_aleth.setAuthor(a.first);
-		m_ui->author->setStyleSheet("");
-	}
-}
+	QString link = "http://winze.io/feedback?miner=7@0x" + QString::fromStdString(m_aleth.keyManager().accounts().front().hex());
+	QDesktopServices::openUrl(QUrl(link));
+ }
 
 void AlethOne::on_mining_toggled(bool _on)
 {
@@ -194,17 +170,9 @@ void AlethOne::on_mining_toggled(bool _on)
 #else
 		char const* sealer = "cpu";
 #endif
-		if (m_ui->local->isChecked())
-		{
-			m_aleth.ethereum()->setSealer(sealer);
-			m_aleth.ethereum()->startSealing();
-		}
-		else if (m_ui->pool->isChecked())
-		{
-			m_slave.setURL(m_ui->url->text());
-			m_slave.setSealer(sealer);
-			m_slave.start();
-		}
+		QSettings s("ethereum", "alethone");
+		m_slave.setURL(s.value("url").toString());
+		m_slave.setSealer("opencl");
 	}
 	else
 	{
@@ -212,39 +180,8 @@ void AlethOne::on_mining_toggled(bool _on)
 			m_aleth.ethereum()->stopSealing();
 		m_slave.stop();
 	}
-	m_ui->local->setEnabled(!_on);
-	m_ui->pool->setEnabled(!_on);
-	m_ui->url->setEnabled(!_on);
-	m_ui->author->setEnabled(!_on);
+
 	refresh();
-}
-
-void AlethOne::on_send_clicked()
-{
-	SendDialog sd(this, &m_aleth);
-	sd.exec();
-}
-
-void AlethOne::on_local_toggled(bool _on)
-{
-	if (_on)
-	{
-		if (!m_aleth.open(Aleth::Bootstrap))
-			m_ui->pool->setChecked(true);
-		else
-			m_aleth.installWatch(ChainChangedFilter, [=](LocalisedLogEntries const&){
-				log(QString(tr("New block #%1")).arg(this->m_aleth.ethereum()->number()));
-				u256 balance = 0;
-				auto accounts = this->m_aleth.keyManager().accounts();
-				for (auto const& a: accounts)
-					balance += this->m_aleth.ethereum()->balanceAt(a);
-				this->m_ui->balance->setText(QString(tr("%1 across %2 accounts")).arg(QString::fromStdString(formatBalance(balance))).arg(accounts.size()));
-			});
-	}
-	else
-		m_aleth.close();
-
-	m_ui->stackedWidget->setCurrentIndex(_on ? 0 : 1);
 }
 
 void AlethOne::log(QString _s)

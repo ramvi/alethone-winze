@@ -45,11 +45,12 @@ public:
 	~AlethOne();
 
 private slots:
-	void on_send_clicked();
-	void on_local_toggled(bool _on);
+	//void on_send_clicked();
+	//void on_local_toggled(bool _on);
+	void on_feedback_clicked();
 	void on_mining_toggled(bool _on);
-	void on_copy_clicked();
-	void on_beneficiary_textEdited();
+	//void on_copy_clicked();
+	//void on_beneficiary_textEdited();
 
 	void refresh();
 

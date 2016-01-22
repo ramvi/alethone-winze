@@ -49,13 +49,13 @@ Aleth::~Aleth()
 
 void Aleth::openKeyManager()
 {
-	if (!getPassword("Enter your MASTER account password.", "Master password", "", [&](string const& s){ return !!keyManager().load(s); }, DefaultPasswordFlags, "The password you entered is incorrect. If you have forgotten your password, and you wish to start afresh, manually remove the file: " + getDataDir("ethereum") + "/keys.info").second)
+	if (!getPassword("Enter your account password.", "Login", "", [&](string const& s){ return !!keyManager().load(s); }, DefaultPasswordFlags, "The password you entered is incorrect. If you have forgotten your password, and you wish to start afresh, manually remove the file: " + getDataDir("ethereum") + "/keys.info").second)
 		exit(-1);
 }
 
 void Aleth::createKeyManager()
 {
-	auto p = getPassword("Enter a MASTER password for your key store. Make it strong. You probably want to write it down somewhere and keep it safe and secure; your identity will rely on this - you never want to lose it.", "Master Password", string(), DoNotVerify, NeedConfirm, "You must have a master password to use this program. Exiting.");
+	auto p = getPassword("Create a password for your account", "Account creation", string(), DoNotVerify, NeedConfirm, "You must have an account use this program. Exiting.");
 	if (!p.second)
 		exit(-1);
 
