@@ -45,20 +45,13 @@ public:
 	~AlethOne();
 
 private slots:
-	//void on_send_clicked();
-	//void on_local_toggled(bool _on);
 	void on_feedback_clicked();
 	void on_mining_toggled(bool _on);
-	//void on_copy_clicked();
-	//void on_beneficiary_textEdited();
 
 	void refresh();
 
 private:
 	void log(QString _s);
-
-	void readSettings();
-	void writeSettings();
 
 	Ui::AlethOne* m_ui;
 	Aleth m_aleth;
