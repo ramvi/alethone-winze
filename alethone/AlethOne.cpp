@@ -88,7 +88,7 @@ void AlethOne::refresh()
 		u256 r;
 		if (m_aleth)
 		{
-
+			log("is m_aleth?");
 			try
 			{
 				m = asEthashClient(m_aleth.ethereum())->isMining();
@@ -105,7 +105,6 @@ void AlethOne::refresh()
 		{
 			m = m_slave.isWorking();
 			r = m ? m_slave.hashrate() : 0;
-			log("m_slave.isWorking()");
 		}
 		if (r > 0)
 		{
@@ -129,7 +128,6 @@ void AlethOne::refresh()
 		}
 		else
 		{
-			log("looper?");
 			m_ui->hashrate->setText("...");
 			m_ui->underHashrate->setText(tr("Waiting..."));
 		}
@@ -164,7 +162,7 @@ void AlethOne::on_mining_toggled(bool _on)
 #endif
 		QSettings s("ethereum", "alethone");
 		m_slave.setURL(s.value("url").toString());
-		m_slave.setSealer("cpu");
+		m_slave.setSealer(sealer);
 	}
 	else
 	{
