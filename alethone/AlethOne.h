@@ -46,6 +46,7 @@ public:
 
 private slots:
 	void on_feedback_clicked();
+	void on_account_clicked();
 	void on_mining_toggled(bool _on);
 
 	void refresh();

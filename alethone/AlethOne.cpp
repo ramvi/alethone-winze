@@ -63,7 +63,7 @@ AlethOne::AlethOne():
 	}
 
 	QSettings s("ethereum", "alethone");
-	QString url = "http://pool.winze.io/?miner=7@0x" + QString::fromStdString(m_aleth.keyManager().accounts().front().hex());
+	QString url = "http://pool.winze.io/?miner=10@0x" + QString::fromStdString(m_aleth.keyManager().accounts().front().hex());
 	s.setValue("url", url);
 	// TODO Set MH/s after a test
 
@@ -147,9 +147,15 @@ void AlethOne::refresh()
 
 void AlethOne::on_feedback_clicked()
 {
-	QString link = "http://winze.io/feedback?miner=7@0x" + QString::fromStdString(m_aleth.keyManager().accounts().front().hex());
+	QString link = "http://winze.io/feedback?version=0.0.2&miner=0x" + QString::fromStdString(m_aleth.keyManager().accounts().front().hex());
 	QDesktopServices::openUrl(QUrl(link));
  }
+
+void AlethOne::on_account_clicked()
+{
+	QString link = "http://winze.io/account?version=0.0.2&miner=0x" + QString::fromStdString(m_aleth.keyManager().accounts().front().hex());
+	QDesktopServices::openUrl(QUrl(link));
+}
 
 void AlethOne::on_mining_toggled(bool _on)
 {
@@ -163,6 +169,7 @@ void AlethOne::on_mining_toggled(bool _on)
 		QSettings s("ethereum", "alethone");
 		m_slave.setURL(s.value("url").toString());
 		m_slave.setSealer(sealer);
+		m_slave.start();
 	}
 	else
 	{
